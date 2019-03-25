@@ -438,6 +438,7 @@ public class AIOPlugin extends JavaPlugin implements Listener {
 				p.setVelocity(p.getLocation().getDirection().multiply(item.getProfile().getSlowSpeed()));
 			else
 				p.setVelocity(p.getLocation().getDirection().multiply(item.getProfile().getNormalSpeed()));
+			p.getWorld().spawnParticle(item.getProfile().getParticle(), p.getEyeLocation().subtract(0, 0.3, 0), 5, 0.1, 0.1,0.1, 0.1);
 		}
 	}
 }

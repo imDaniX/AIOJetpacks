@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.HashSet;
 
 import org.bukkit.GameMode;
 import org.bukkit.configuration.ConfigurationSection;
@@ -21,28 +22,28 @@ public class JetpackManager
 {
 	private List<Jetpack> jetpackProfiles;
 	private HashMap<UUID, JetpackItem> activeJetpacks;
-	
+
 	public JetpackManager(YamlConfiguration config)
 	{
 		this.reloadProfiles(config);
 	}
-	
+
 	public void reloadProfiles(YamlConfiguration config)
 	{
 		if (config == null)
 			return;
-		
+
 		// Unregister old recipes
 		this.unregisterOldRecipes();
-		
-		ArrayList<Jetpack> jetpackProfiles_tmp = new ArrayList<Jetpack>();
-		
+
+		ArrayList<Jetpack> jetpackProfiles_tmp = new ArrayList<>();
+
 		ConfigurationSection jetpackSection = config.getConfigurationSection("jetpacks");
-		
+
 		Set<String> keysUnsorted = jetpackSection.getKeys(false);
-		List<String> keys = new ArrayList<String>(keysUnsorted);
+		List<String> keys = new ArrayList<>(keysUnsorted);
 		Collections.sort(keys);
-		
+
 		if (!keys.isEmpty())
 		{
 			for (String subSection : keys)
@@ -64,20 +65,23 @@ public class JetpackManager
 			}
 		}
 		
-		this.activeJetpacks = new HashMap<UUID, JetpackItem>();
+		this.activeJetpacks = new HashMap<>();
 		this.jetpackProfiles = jetpackProfiles_tmp;
 	}
-	
+
 	public void unregisterOldRecipes()
 	{
 		Iterator<Recipe> i = AIOPlugin.getInstance().getServer().recipeIterator();
+		Set<Recipe> s = new HashSet<>();
 		while (i.hasNext())
 		{
 			Recipe r = i.next();
-			if (JetpackItem.isJetpack_recipeCheck(r.getResult()))
-			{
-				i.remove();
-			}
+			if (!JetpackItem.isJetpack_recipeCheck(r.getResult()))
+				s.add(r);
+		}
+		AIOPlugin.getInstance().getServer().clearRecipes();
+		for (Recipe r : s) {
+			AIOPlugin.getInstance().getServer().addRecipe(r);
 		}
 	}
 	

@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ShapedRecipe;
@@ -24,6 +26,8 @@ public class Jetpack
 	private double normalSpeed;
 	private double fastSpeed;
 	private double slowSpeed;
+	private Particle particle;
+	private int particleCount;
 	private HashMap<PotionEffectType, Integer> potionEffects;
 	
 	public Jetpack(ConfigurationSection section) throws IllegalArgumentException
@@ -58,6 +62,18 @@ public class Jetpack
 					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " is missing section 'enchantments', creating default.");
 					needToSaveConfig = true;
 				}
+				if (!section.isString("particle"))
+				{
+					section.set("particle", "SMOKE_NORMAL");
+					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " is missing 'particle', setting to default.");
+					needToSaveConfig = true;
+				}
+				if (!section.isInt("particleCount"))
+				{
+					section.set("particleCount", 10);
+					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " is missing 'particleCount', setting to default.");
+					needToSaveConfig = true;
+				}
 				if (!section.isBoolean("infiniteFuel"))
 				{
 					section.set("infiniteFuel", false);
@@ -81,19 +97,19 @@ public class Jetpack
 				}
 				if (!section.isDouble("normalSpeed"))
 				{
-					section.set("normalSpeed", 1.0);
+					section.set("normalSpeed", 0.8);
 					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " is missing 'normalSpeed', setting to default.");
 					needToSaveConfig = true;
 				}
 				if (!section.isDouble("fastSpeed"))
 				{
-					section.set("fastSpeed", 1.5);
+					section.set("fastSpeed", 1.2);
 					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " is missing 'fastSpeed', setting to default.");
 					needToSaveConfig = true;
 				}
 				if (!section.isDouble("slowSpeed"))
 				{
-					section.set("slowSpeed", 0.5);
+					section.set("slowSpeed", 0.4);
 					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " is missing 'slowSpeed', setting to default.");
 					needToSaveConfig = true;
 				}
@@ -106,6 +122,14 @@ public class Jetpack
 				
 				this.name = section.getName();
 				this.displayName = section.getString("displayName");
+
+				try{
+					this.particle = Particle.valueOf(section.getString("particle").toUpperCase());
+				}
+				catch (IllegalArgumentException e) {
+					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " conatins nonexistent particle, using default.");
+					this.particle = Particle.SMOKE_NORMAL;
+				}
 				
 				this.item = Material.getMaterial(section.getString("item"));
 				if (this.item == null)
@@ -158,7 +182,7 @@ public class Jetpack
 				}
 				
 				
-				this.potionEffects = new HashMap<PotionEffectType, Integer>();
+				this.potionEffects = new HashMap<>();
 				ConfigurationSection effectSection = section.getConfigurationSection("effects");
 				if (!effectSection.getKeys(false).isEmpty())
 				{
@@ -187,7 +211,7 @@ public class Jetpack
 					}
 				}
 				
-				this.enchantments = new HashMap<Enchantment, Integer>();
+				this.enchantments = new HashMap<>();
 				ConfigurationSection enchantmentSection = section.getConfigurationSection("enchantments");
 				if (!enchantmentSection.getKeys(false).isEmpty())
 				{
@@ -226,8 +250,8 @@ public class Jetpack
 						AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " has invalid crafting recipe in 'recipe', too much or too few items in a row.");
 						throw new IllegalArgumentException();
 					}
-					
-					this.recipe = new ShapedRecipe(JetpackItem.getNewJetpackItem(this).getItem()).shape("123", "456", "789");
+					NamespacedKey key= new NamespacedKey(de.freestylecrafter.aio.jetpacks.AIOPlugin.getInstance(), name);
+					this.recipe = new ShapedRecipe(key, JetpackItem.getNewJetpackItem(this).getItem()).shape("123", "456", "789");
 					
 					Material m1 = Material.getMaterial(row1[0]);
 					if (m1 != null)
@@ -269,11 +293,7 @@ public class Jetpack
 					
 					AIOPlugin.getInstance().getServer().addRecipe(this.recipe);
 				}
-				else if (recipeList.size() == 0)
-				{
-					// This is okay, do nothing
-				}
-				else
+				else if (recipeList.size() != 0)
 				{
 					AIOPlugin.getInstance().getLogger().info("Jetpack profile #" + section.getName() + " has invalid crafting recipe in 'recipe', too much or too few rows.");
 					throw new IllegalArgumentException();
@@ -357,6 +377,8 @@ public class Jetpack
 	{
 		return this.slowSpeed;
 	}
+
+	public Particle getParticle() { return this.particle; }
 	
 	public HashMap<PotionEffectType, Integer> getPotionEffects()
 	{
